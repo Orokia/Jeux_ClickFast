@@ -227,3 +227,54 @@ La commande `docker network inspect bridge` a permis de relever l’adresse IP i
 
 Cette séance a permis de mettre en place une API REST dockerisée, reliée à PostgreSQL, et de valider l’enregistrement, la récupération et la persistance des scores. La prochaine étape consiste à intégrer ces fonctionnalités au jeu et à améliorer la communication entre les conteneurs.
 
+## Jour 2 — API et Docker Compose
+
+### 16. Intégration de l’API
+
+L’API Node.js/Express permet d’enregistrer les scores avec `POST /scores` et de consulter le classement avec `GET /scores`. Les données sont stockées dans PostgreSQL.
+
+### 17. Réseau Docker
+
+Création du réseau `clickfast-network` pour permettre la communication entre le jeu, l’API et la base de données via leurs noms de conteneurs.
+
+### 18. Variables d’environnement
+
+Ajout du fichier `.gitignore` pour exclure les fichiers sensibles, notamment `api/.env`. Création de `api/.env.example` pour documenter la configuration nécessaire.
+
+### 19. Docker Compose
+
+Création de `docker-compose.yml` pour lancer les services :
+- **Game** : port 8080
+- **API** : port 3000
+- **PostgreSQL** : stockage persistant via `clickfast_pgdata_v2`
+- **Adminer** : port 8081
+
+Lancement avec `docker compose up -d --build`. Les quatre conteneurs démarrent et PostgreSQL est indiqué comme `healthy`.
+
+### 20. Vérifications
+
+La commande `curl.exe http://localhost:3000/scores` retourne les scores enregistrés. La persistance des données PostgreSQL a également été vérifiée.
+
+### 21. Bilan et améliorations
+
+L’application, l’API et la base de données fonctionnent avec Docker Compose. Il reste à vérifier le fonctionnement complet depuis le navigateur et à sécuriser la configuration en centralisant les secrets dans `.env`, sans exposer le port PostgreSQL inutilement.
+
+
+### 22. Validation finale
+
+Les tests ont été réalisés avec succès :
+- Les quatre conteneurs Docker démarrent correctement.
+- PostgreSQL est `healthy` et son port n’est plus publié sur l’hôte.
+- L’API retourne les scores enregistrés.
+- Le jeu fonctionne dans le navigateur et l’enregistrement des scores est opérationnel.
+
+**Bilan :** ClickFast fonctionne avec Docker Compose, une API REST et une base PostgreSQL persistante.
+
+
+## Mesures des images
+
+| **Image**          | **Taille**                  | **Couches (poids max)** | **Build froid / chaud** | **Temps 1re réponse HTTP** |
+| ------------------ | --------------------------- | ----------------------- | ----------------------- | -------------------------- |
+| clickfast (le jeu) | 20,6 Mo (5,8 Mo compressés)  | 11 (9,1 Mo)             | 32,5 s / 10,3 s         | 5,2 s                      |
+| l'API de scores    | 250 Mo (63,3 Mo compressés) | 8 (167,0 Mo)            | 40,3 s / 10,3 s         | 5,6 s                      |
+| stats-api          | 232 Mo (55,2 Mo compressés) | 9 (87,7 Mo)             | 57,4 s / 9,1 s          | 7,8 s                      |
