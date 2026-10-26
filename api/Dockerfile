@@ -1,14 +1,4 @@
-
-# Étape 1 : installer les dépendances
-FROM node:24-alpine AS build
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-# Étape 2 : image de production
-FROM node:24-alpine AS production
+FROM node:24-alpine
 
 ENV NODE_ENV=production
 

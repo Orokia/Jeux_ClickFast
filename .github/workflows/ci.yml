@@ -1,0 +1,25 @@
+
+name: ClickFast CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Vérifier le projet et construire les images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Vérifier la configuration Docker Compose
+        run: docker compose config --quiet
+
+      - name: Construire les images Docker
+        run: docker compose build
