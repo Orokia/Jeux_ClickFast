@@ -1,19 +1,37 @@
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
     <title>ClickFast</title>
   </head>
   <body>
     <div id="main">
       <div id="container">
-        <h1 class="flex">ClickFast</h1>
-        <p class="catchphrase">Sois le plus rapide des clickers du game ⚡</p>
+        <h1 class="flex-center">ClickFast</h1>
+
+        <p class="catchphrase">
+          Sois le plus rapide des clickers du game ⚡
+        </p>
+
+        <div class="number" id="score">0</div>
+
+        <p class="catchphrase">
+          Temps restant : <span id="timer">5</span> secondes
+        </p>
+
+        <div class="flex-center">
+          <button id="button-clicker" disabled>
+            Commencer
+          </button>
+        </div>
+
+        <p id="message" class="catchphrase">
+          Clique sur Commencer pour jouer !
+        </p>
       </div>
     </div>
   </body>
