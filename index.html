@@ -17,6 +17,15 @@
           Sois le plus rapide des clickers du game ⚡
         </p>
 
+        <label for="username">Ton pseudo</label>
+        <input
+          id="username"
+          type="text"
+          maxlength="50"
+          placeholder="Entre ton pseudo"
+          autocomplete="nickname"
+        />
+
         <div class="number" id="score">0</div>
 
         <p class="catchphrase">
@@ -24,14 +33,20 @@
         </p>
 
         <div class="flex-center">
-          <button id="button-clicker" disabled>
+          <button id="button-clicker">
             Commencer
           </button>
         </div>
 
         <p id="message" class="catchphrase">
-          Clique sur Commencer pour jouer !
+          Entre ton pseudo puis clique sur Commencer !
         </p>
+
+        <section id="leaderboard">
+          <h2>🏆 Meilleurs scores</h2>
+          <p id="leaderboard-message">Chargement du classement...</p>
+          <ol id="leaderboard-list"></ol>
+        </section>
       </div>
     </div>
   </body>

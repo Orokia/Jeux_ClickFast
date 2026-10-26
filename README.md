@@ -156,3 +156,74 @@ La construction à chaud a été réalisée en environ 2,83 secondes, contre 7,1
 
 Ces mesures constituent un premier point de référence pour le projet. Elles peuvent varier selon la machine, le cache disponible et les conditions d'exécution.
 
+
+## 10. Objectif
+
+Développer une API REST pour gérer les scores de ClickFast, la connecter à PostgreSQL et dockeriser l’ensemble en assurant la persistance des données.
+
+## 11. Développement de l’API
+
+L’API a été développée avec **Node.js, Express, PostgreSQL (`pg`) et dotenv**.
+
+| Route | Fonction |
+|---|---|
+| `GET /` | Vérifier le fonctionnement de l’API |
+| `POST /scores` | Enregistrer un score |
+| `GET /scores` | Récupérer les 10 meilleurs scores |
+
+Les données sont validées avant insertion et les requêtes SQL utilisent des paramètres.
+
+## 12. Dockerisation et persistance
+
+Deux conteneurs sont utilisés : `clickfast-api` pour l’API et `clickfast-db` pour PostgreSQL.
+
+L’image `clickfast-api:1.0` a été construite avec Node.js 24 Alpine. Le fichier `.dockerignore` exclut notamment les dépendances locales, les fichiers `.env` et la sauvegarde SQL.
+
+La base utilise le volume nommé `clickfast_pgdata_v2`, monté sur `/var/lib/postgresql/data`.
+
+Après une difficulté liée au montage initial du volume, les données ont été restaurées puis vérifiées après :
+- l’arrêt et le redémarrage du conteneur ;
+- la suppression et la recréation du conteneur avec le même volume.
+
+**Résultat :** le score d’Orokia, de 15 points, a été conservé.
+
+## 13. Tests réalisés
+
+Les tests ont été effectués avec `curl.exe` sur l’API accessible à `http://localhost:3000`.
+
+| Test | Résultat |
+|---|---|
+| Récupération des scores avec `GET /scores` | Réussi |
+| Enregistrement avec `POST /scores` | Réussi |
+| Vérification du classement décroissant | Réussi |
+| Persistance après recréation du conteneur PostgreSQL | Réussi |
+
+Le score de test `TestDocker — 25 points` a été enregistré avec succès. Le classement retourné contenait :
+
+| Joueur | Score |
+|---|---:|
+| TestDocker | 25 |
+| Orokia | 15 |
+
+La commande `docker network inspect bridge` a permis de relever l’adresse IP interne de PostgreSQL : `172.17.0.3`. Cette adresse reste temporaire et pourra changer lors d’une recréation du conteneur.
+
+## 14. Bilan et suite du projet
+
+**Réalisé :**
+- [x] Développement des routes REST.
+- [x] Construction de l’image `clickfast-api:1.0`.
+- [x] Connexion de l’API à PostgreSQL.
+- [x] Tests de lecture et d’écriture des scores.
+- [x] Vérification de la persistance des données.
+
+**À poursuivre :**
+- [ ] Intégrer l’API au jeu JavaScript et afficher le classement.
+- [ ] Tester l’indisponibilité de PostgreSQL et la gestion des erreurs.
+- [ ] Créer un réseau Docker personnalisé.
+- [ ] Finaliser les variables d’environnement.
+- [ ] Mettre en place Docker Compose, l’API Python, la publication et l’optimisation des images.
+
+## 15. Conclusion
+
+Cette séance a permis de mettre en place une API REST dockerisée, reliée à PostgreSQL, et de valider l’enregistrement, la récupération et la persistance des scores. La prochaine étape consiste à intégrer ces fonctionnalités au jeu et à améliorer la communication entre les conteneurs.
+
