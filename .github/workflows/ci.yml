@@ -10,8 +10,47 @@ on:
       - main
 
 jobs:
-  verify:
-    name: Vérifier le projet et construire les images
+  lint:
+    name: Vérifier la qualité du code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Exécuter ESLint
+        run: npm run lint
+
+  test:
+    name: Exécuter les tests Jest
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Exécuter les tests
+        run: npm test
+
+  docker:
+    name: Construire les images Docker
     runs-on: ubuntu-latest
 
     steps:

@@ -26,7 +26,7 @@ button.addEventListener("click", () => {
     return;
   }
 
-  score++;
+  score = incrementScore(score);
   scoreDisplay.textContent = score;
 });
 

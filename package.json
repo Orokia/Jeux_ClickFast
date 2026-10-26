@@ -1,0 +1,27 @@
+{
+  "name": "jeux_clickfast",
+  "version": "1.0.0",
+  "description": "L’objectif de cette séance est de préparer le projet ClickFast à être exécuté dans un conteneur Docker, en utilisant une image de production légère, en limitant les fichiers intégrés à l’image et en évitant l’exécution du service avec les privilèges `root`.",
+  "main": "script.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Orokia/Jeux_ClickFast.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Orokia/Jeux_ClickFast/issues"
+  },
+  "homepage": "https://github.com/Orokia/Jeux_ClickFast#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "jest": "^30.5.2"
+  }
+}
