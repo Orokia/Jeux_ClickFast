@@ -1,0 +1,19 @@
+
+# Variables d'environnement et secrets
+.env
+.env.*
+!.env.example
+api/.env
+api/.env.*
+!api/.env.example
+
+# Dépendances Node.js
+node_modules/
+api/node_modules/
+
+# Sauvegardes locales de la base de données
+api/scores_backup.sql
+
+# Fichiers système
+.DS_Store
+Thumbs.db
