@@ -463,7 +463,7 @@ Avant de déclarer le projet terminé, vérifier :
 - [ ] Les images sont publiées et le déploiement fonctionne sans code source local.
 - [ ] Les mesures avant/après optimisation sont consignées.
 - [ ] Les sauvegardes sont restaurables et vérifiées.
-- [ ] Le dépôt ne contient aucun secret ni fichier de sauvegarde sensible.
+- [ ] Le dépôt ne contient aucun secret ni fichier de sauvegarde sensible
 
 ## 14. Objectif du projet
 
