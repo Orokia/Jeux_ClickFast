@@ -1,4 +1,3 @@
-
 name: ClickFast CI
 
 on:
@@ -8,6 +7,9 @@ on:
   pull_request:
     branches:
       - main
+
+permissions:
+  contents: read
 
 jobs:
   lint:
@@ -59,12 +61,17 @@ jobs:
 
       - name: Vérifier Docker Compose
         run: docker compose config --quiet
+        env:
+          DB_PASSWORD: validation-only
 
       - name: Construire les images Docker
-        run: docker compose build
+        run: |
+          docker build -t clickfast:ci .
+          docker build -t clickfast-api:ci ./api
+          docker build -t clickfast-stats-api:ci ./stats-api
 
   publish:
-    name: Publier ClickFast sur Docker Hub
+    name: Publier les images sur Docker Hub
     runs-on: ubuntu-latest
     needs: [lint, test, docker]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -82,11 +89,26 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Construire et publier l'image
+      - name: Publier l'image du site
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            orokia/clickfast:${{ github.sha }}
+          tags: orokia/clickfast:${{ github.sha }}
+
+      - name: Publier l'image de l'API Node.js
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          file: ./api/Dockerfile
+          push: true
+          tags: orokia/clickfast-api:${{ github.sha }}
+
+      - name: Publier l'image de l'API statistiques
+        uses: docker/build-push-action@v6
+        with:
+          context: ./stats-api
+          file: ./stats-api/Dockerfile
+          push: true
+          tags: orokia/clickfast-stats-api:${{ github.sha }}
