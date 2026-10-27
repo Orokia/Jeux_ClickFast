@@ -155,7 +155,9 @@ jobs:
               $utf8NoBom
             )
 
-            icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):(R)" | Out-Null
+            # (R,D) : lecture pour ssh, suppression pour le nettoyage du bloc finally.
+            # Avec (R) seul, la clé restait dans _temp et bloquait les déploiements suivants.
+            icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):(R,D)" | Out-Null
             if ($LASTEXITCODE -ne 0) {
               throw "Impossible de sécuriser les permissions de la clé SSH."
             }
@@ -175,5 +177,11 @@ jobs:
             }
           }
           finally {
-            Remove-Item $keyPath, $knownHostsPath -Force -ErrorAction SilentlyContinue
+            # File.Delete et non Remove-Item -Force, qui exige aussi le droit de modifier les attributs.
+            foreach ($path in $keyPath, $knownHostsPath) {
+              try { [System.IO.File]::Delete($path) } catch { }
+            }
+            if (Test-Path $keyPath) {
+              Write-Warning "La clé SSH temporaire n'a pas pu être supprimée : $keyPath"
+            }
           }
