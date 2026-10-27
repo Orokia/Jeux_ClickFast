@@ -17,3 +17,7 @@ api/scores_backup.sql
 # Fichiers système
 .DS_Store
 Thumbs.db
+
+# Clés SSH de déploiement
+/deploy_key
+/deploy_key.pub
