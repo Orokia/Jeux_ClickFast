@@ -22,3 +22,5 @@ Thumbs.db
 /deploy_key
 /deploy_key.pub
 .github/workflows/ci.yml.bak
+backups/
+known_hosts.test

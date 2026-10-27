@@ -1,280 +1,472 @@
-# Journal de bord — Projet ClickFast
+# ClickFast — Jeu de rapidité web conteneurisé
 
-# Jour 1
+## 1. Présentation du projet
 
+ClickFast est un jeu web de rapidité avec classement des scores. Le joueur doit cliquer le plus rapidement possible pendant une partie chronométrée de 5 secondes.
 
-## 1. Objectif de la séance
+Le projet met en œuvre une architecture composée d'un frontend web, de deux API et d'une base de données PostgreSQL. L'ensemble est conteneurisé avec Docker et Docker Compose, avec un pipeline CI/CD permettant de tester, construire, publier et déployer les images.
 
-L’objectif de cette séance est de préparer le projet ClickFast à être exécuté dans un conteneur Docker, en utilisant une image de production légère, en limitant les fichiers intégrés à l’image et en évitant l’exécution du service avec les privilèges `root`.
+### Fonctionnalités
 
-## 2. Création et préparation du projet
+- Jeu web accessible depuis un navigateur.
+- Compteur de clics et chronomètre de 5 secondes.
+- Enregistrement des scores et consultation du top 10.
+- API de statistiques : meilleur score, nombre de parties et nombre de joueurs distincts.
+- Base PostgreSQL avec stockage persistant.
+- Environnement conteneurisé avec Docker Compose.
+- Réseau Docker dédié et configuration par variables d'environnement.
+- Publication des images sur Docker Hub.
+- Pipeline CI/CD GitHub Actions.
+- Déploiement sur une VM via un runner auto-hébergé et SSH.
+- Sauvegarde PostgreSQL avec vérification par restauration.
 
-Le projet a été créé sur le Bureau Windows dans le répertoire suivant :
+## 2. Technologies utilisées
 
-`C:\Users\COULIBALI ROKIA\Desktop\Jeux_ClickFast`
-
-Les fichiers principaux du jeu sont :
-- `index.html` : structure de la page web ;
-- `style.css` : mise en forme et présentation ;
-- `script.js` : logique du jeu ;
-- `README.md` : documentation du projet.
-
-Un fichier `Dockerfile` a été ajouté pour définir la construction de l’image Docker. Le fichier `.dockerignore` a également été créé afin d’exclure du contexte de construction les fichiers inutiles, notamment `.git`, les fichiers d’environnement et les dépendances Node.js.
-
-## 3. Construction de l’image Docker
-
-Une première image a été construite à partir de Nginx Alpine. Les vérifications ont ensuite révélé deux points à améliorer : l’image initiale exécutait le service avec l’utilisateur `root` et contenait un fichier Nginx par défaut, `50x.html`.
-
-Le Dockerfile a donc été adapté pour utiliser l’image `nginxinc/nginx-unprivileged:1.28-alpine`, qui permet d’exécuter Nginx sans privilèges administrateur.
-
-Pour supprimer le fichier `50x.html`, l’utilisateur a été temporairement défini sur `root` pendant la construction. Il a ensuite été rétabli sur `nginx`.
-
-La construction finale a été réalisée avec la commande :
-
-`docker build --no-cache -t clickfast:1.2 .`
-
-**Résultat :** la construction de l’image `clickfast:1.2` s’est terminée avec succès.
-
-## 4. Vérifications réalisées
-
-### Vérification du contenu de l’image
-
-Commande exécutée :
-
-`docker run --rm clickfast:1.2 ls -la /usr/share/nginx/html`
-
-Résultat : le répertoire du site contient uniquement les trois fichiers nécessaires :
-- `index.html`
-- `script.js`
-- `style.css`
-
-Le fichier Nginx par défaut `50x.html` a bien été supprimé.
-
-### Vérification de l’utilisateur
-
-Commande exécutée :
-
-`docker run --rm clickfast:1.2 whoami`
-
-Résultat obtenu :
-
-`nginx`
-
-Cette vérification confirme que le conteneur utilise par défaut l’utilisateur non privilégié `nginx`, conformément à l’objectif de sécurité.
-
-## 5. Difficultés rencontrées et solutions
-
-**Difficulté 1 :** le fichier `50x.html` était toujours présent dans l’image malgré la copie limitée aux fichiers du projet.
-
-**Solution :** suppression explicite du fichier dans le Dockerfile avant la copie des fichiers du jeu.
-
-**Difficulté 2 :** la suppression du fichier a échoué avec une erreur de permission, car l’image non privilégiée utilise l’utilisateur `nginx` par défaut.
-
-**Solution :** passage temporaire à `USER root` pendant la construction, puis retour à `USER nginx` pour l’exécution du conteneur.
-
-Ces corrections ont permis d’obtenir une image fonctionnelle au niveau de sa construction et conforme aux vérifications de contenu et d’utilisateur réalisées.
-
-## 6. Bilan de la séance
-
-Les objectifs suivants sont atteints :
-- [x] Création du projet ClickFast sur le Bureau.
-- [x] Préparation du Dockerfile de production.
-- [x] Création du fichier `.dockerignore`.
-- [x] Construction réussie de l’image `clickfast:1.2`.
-- [x] Suppression des fichiers Nginx inutiles du répertoire du site.
-- [x] Vérification de l’exécution avec l’utilisateur non privilégié `nginx`.
-
-Les étapes suivantes restent à effectuer :
-- [ ] Démarrer le conteneur et vérifier l’accès au jeu via `http://localhost:8080`.
-- [ ] Vérifier le fonctionnement du jeu dans le navigateur.
-- [ ] Mesurer la taille de l’image Docker.
-- [ ] Mesurer le temps de construction à froid et à chaud.
-- [ ] Consigner les mesures et les résultats dans le journal de bord.
-- [ ] Enregistrer les modifications dans Git avec des commits explicites.
-
-## 7. Conclusion
-
-Cette séance a permis de construire une image Docker de production pour ClickFast, de limiter les fichiers intégrés à l’image et de configurer l’exécution avec un utilisateur non privilégié. La prochaine étape consiste à valider le fonctionnement du jeu via HTTP et à mesurer les performances de construction et la taille de l’image.
-
-### 8. Test de fonctionnement HTTP
-
-Le conteneur Docker `clickfast` a été démarré avec la commande :
-
-`docker run -d --name clickfast -p 8080:8080 clickfast:1.2`
-
-Un test HTTP a ensuite été effectué avec :
-
-`curl.exe -I http://localhost:8080`
-
-**Résultat obtenu :**
-- Code HTTP : `200 OK`
-- Serveur : Nginx 1.28.2
-- Type de contenu : `text/html`
-- Taille de la réponse HTML : 961 octets
-- Port publié : `8080`
-
-**Conclusion :** le serveur Nginx répond correctement et la page HTML de ClickFast est accessible via HTTP. Le fonctionnement interactif du jeu dans le navigateur reste à vérifier séparément.
-
-
-### 9. Mesure de la taille et des temps de construction
-
-Les mesures ont été réalisées avec Docker Desktop le 26 octobre 2026.
-
-**Taille de l’image**
-
-Commande utilisée :
-
-`docker images clickfast:1.2`
-
-Résultats :
-- Taille disque : 81,5 MB.
-- Taille du contenu : 23 MB.
-
-**Construction à froid**
-
-Commande utilisée :
-
-`Measure-Command { docker build --no-cache -t clickfast:1.2 . }`
-
-Temps mesuré : **7,147 secondes**.
-
-Le paramètre `--no-cache` force Docker à reconstruire les étapes sans réutiliser le cache de construction.
-
-**Construction à chaud**
-
-Commande utilisée :
-
-`Measure-Command { docker build -t clickfast:1.2 . }`
-
-Temps mesuré : **2,826 secondes**.
-
-Cette construction bénéficie du cache Docker lorsque les étapes et leurs entrées n'ont pas changé.
-
-**Analyse des résultats**
-
-La construction à chaud a été réalisée en environ 2,83 secondes, contre 7,15 secondes pour la construction à froid. Le gain de temps mesuré est d'environ 60,5 %.
-
-Ces mesures constituent un premier point de référence pour le projet. Elles peuvent varier selon la machine, le cache disponible et les conditions d'exécution.
-
-
-## 10. Objectif
-
-Développer une API REST pour gérer les scores de ClickFast, la connecter à PostgreSQL et dockeriser l’ensemble en assurant la persistance des données.
-
-## 11. Développement de l’API
-
-L’API a été développée avec **Node.js, Express, PostgreSQL (`pg`) et dotenv**.
-
-| Route | Fonction |
+| Composant | Technologies |
 |---|---|
-| `GET /` | Vérifier le fonctionnement de l’API |
-| `POST /scores` | Enregistrer un score |
-| `GET /scores` | Récupérer les 10 meilleurs scores |
+| Frontend | HTML, CSS, JavaScript, Nginx |
+| API de scores | Node.js, Express |
+| API de statistiques | Python, FastAPI, Uvicorn |
+| Base de données | PostgreSQL |
+| Conteneurisation | Docker, Docker Compose |
+| CI/CD | GitHub Actions |
+| Registre d'images | Docker Hub |
+| Déploiement | VM, runner auto-hébergé, SSH |
+| Sauvegarde | `pg_dump`, `pg_restore`, PowerShell |
+| Contrôle des accès | Utilisateurs non privilégiés dans les images concernées |
 
-Les données sont validées avant insertion et les requêtes SQL utilisent des paramètres.
+## 3. Architecture
 
-## 12. Dockerisation et persistance
+```text
+Navigateur
+    |
+    v
+Frontend ClickFast — Nginx
+    |
+    +------> API de scores — Node.js / Express
+    |                    |
+    |                    v
+    |                PostgreSQL
+    |                    ^
+    |                    |
+    +------> API statistiques — Python / FastAPI
 
-Deux conteneurs sont utilisés : `clickfast-api` pour l’API et `clickfast-db` pour PostgreSQL.
+Administration de la base : Adminer
+```
 
-L’image `clickfast-api:1.0` a été construite avec Node.js 24 Alpine. Le fichier `.dockerignore` exclut notamment les dépendances locales, les fichiers `.env` et la sauvegarde SQL.
+Les services communiquent via le réseau Docker. En production, PostgreSQL n'est pas publié directement sur le port de l'hôte.
 
-La base utilise le volume nommé `clickfast_pgdata_v2`, monté sur `/var/lib/postgresql/data`.
+## 4. Prérequis
 
-Après une difficulté liée au montage initial du volume, les données ont été restaurées puis vérifiées après :
-- l’arrêt et le redémarrage du conteneur ;
-- la suppression et la recréation du conteneur avec le même volume.
+Installer les éléments suivants :
 
-**Résultat :** le score d’Orokia, de 15 points, a été conservé.
+- Docker Desktop ou Docker Engine.
+- Docker Compose v2.
+- Git.
+- Un navigateur web.
 
-## 13. Tests réalisés
+Vérifier les installations :
 
-Les tests ont été effectués avec `curl.exe` sur l’API accessible à `http://localhost:3000`.
+```powershell
+docker --version
+docker compose version
+git --version
+```
 
-| Test | Résultat |
+## 5. Démarrage local
+
+### 5.1. Cloner le dépôt
+
+```powershell
+git clone https://github.com/Orokia/Jeux_ClickFast.git
+cd Jeux_ClickFast
+```
+
+### 5.2. Configurer les variables d'environnement
+
+Créer un fichier `.env` à la racine du projet :
+
+```dotenv
+DB_PASSWORD=choisir_un_mot_de_passe
+```
+
+Utiliser le nom exact des variables attendu par `docker-compose.yml` et par les services. Ne jamais publier le véritable mot de passe.
+
+### 5.3. Construire et démarrer les services
+
+```powershell
+docker compose up -d --build
+```
+
+Vérifier leur état :
+
+```powershell
+docker compose ps
+```
+
+Consulter les journaux :
+
+```powershell
+docker compose logs --tail=100
+```
+
+Pour un service spécifique :
+
+```powershell
+docker compose logs -f clickfast
+docker compose logs -f clickfast-api
+docker compose logs -f clickfast-stats-api
+docker compose logs -f clickfast-db
+```
+
+Les noms exacts des services doivent correspondre à ceux définis dans le fichier Compose.
+
+### 5.4. Adresses locales
+
+| Service | Adresse |
 |---|---|
-| Récupération des scores avec `GET /scores` | Réussi |
-| Enregistrement avec `POST /scores` | Réussi |
-| Vérification du classement décroissant | Réussi |
-| Persistance après recréation du conteneur PostgreSQL | Réussi |
+| Jeu ClickFast | http://localhost:8080 |
+| API de scores | http://localhost:3000 |
+| API statistiques | http://localhost:8000 |
+| Adminer | http://localhost:8081 |
 
-Le score de test `TestDocker — 25 points` a été enregistré avec succès. Le classement retourné contenait :
+Ces adresses supposent que les ports correspondants sont publiés par la configuration locale.
 
-| Joueur | Score |
-|---|---:|
-| TestDocker | 25 |
-| Orokia | 15 |
+### 5.5. Arrêter les services
 
-La commande `docker network inspect bridge` a permis de relever l’adresse IP interne de PostgreSQL : `172.17.0.3`. Cette adresse reste temporaire et pourra changer lors d’une recréation du conteneur.
+```powershell
+docker compose down
+```
 
-## 14. Bilan et suite du projet
+Les données PostgreSQL sont conservées dans le volume Docker `clickfast_pgdata_v2`, sous réserve que ce volume soit bien celui référencé par la configuration.
 
-**Réalisé :**
-- [x] Développement des routes REST.
-- [x] Construction de l’image `clickfast-api:1.0`.
-- [x] Connexion de l’API à PostgreSQL.
-- [x] Tests de lecture et d’écriture des scores.
-- [x] Vérification de la persistance des données.
+**Attention :** ne pas ajouter `-v` à la commande d'arrêt si les données doivent être conservées.
 
-**À poursuivre :**
-- [ ] Intégrer l’API au jeu JavaScript et afficher le classement.
-- [ ] Tester l’indisponibilité de PostgreSQL et la gestion des erreurs.
-- [ ] Créer un réseau Docker personnalisé.
-- [ ] Finaliser les variables d’environnement.
-- [ ] Mettre en place Docker Compose, l’API Python, la publication et l’optimisation des images.
+## 6. API de scores
 
-## 15. Conclusion
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/` | Vérifier que l'API répond |
+| POST | `/scores` | Enregistrer un score |
+| GET | `/scores` | Récupérer les 10 meilleurs scores |
 
-Cette séance a permis de mettre en place une API REST dockerisée, reliée à PostgreSQL, et de valider l’enregistrement, la récupération et la persistance des scores. La prochaine étape consiste à intégrer ces fonctionnalités au jeu et à améliorer la communication entre les conteneurs.
+Les données sont validées avant insertion. Les requêtes SQL utilisent des paramètres afin de limiter les risques d'injection SQL.
 
-## Jour 2 — API et Docker Compose
+### Tests rapides
 
-### 16. Intégration de l’API
+Vérifier que l'API répond :
 
-L’API Node.js/Express permet d’enregistrer les scores avec `POST /scores` et de consulter le classement avec `GET /scores`. Les données sont stockées dans PostgreSQL.
+```powershell
+curl.exe -i http://localhost:3000/
+```
 
-### 17. Réseau Docker
+Récupérer le classement :
 
-Création du réseau `clickfast-network` pour permettre la communication entre le jeu, l’API et la base de données via leurs noms de conteneurs.
+```powershell
+curl.exe -i http://localhost:3000/scores
+```
 
-### 18. Variables d’environnement
+Tester l'enregistrement d'un score avec un exemple adapté aux champs réellement attendus par l'API :
 
-Ajout du fichier `.gitignore` pour exclure les fichiers sensibles, notamment `api/.env`. Création de `api/.env.example` pour documenter la configuration nécessaire.
+```powershell
+curl.exe -i -X POST http://localhost:3000/scores `
+  -H "Content-Type: application/json" `
+  -d '{"player":"Test","score":10}'
+```
 
-### 19. Docker Compose
+Adapter le JSON si l'API attend d'autres noms de champs. Vérifier que les scores sont persistés dans PostgreSQL.
 
-Création de `docker-compose.yml` pour lancer les services :
-- **Game** : port 8080
-- **API** : port 3000
-- **PostgreSQL** : stockage persistant via `clickfast_pgdata_v2`
-- **Adminer** : port 8081
+## 7. API de statistiques
 
-Lancement avec `docker compose up -d --build`. Les quatre conteneurs démarrent et PostgreSQL est indiqué comme `healthy`.
+L'API de statistiques est développée en Python avec FastAPI.
 
-### 20. Vérifications
+Elle permet notamment de consulter :
 
-La commande `curl.exe http://localhost:3000/scores` retourne les scores enregistrés. La persistance des données PostgreSQL a également été vérifiée.
+- Le meilleur score.
+- Le nombre total de parties.
+- Le nombre de joueurs distincts.
 
-### 21. Bilan et améliorations
+L'URL de chaque endpoint doit être vérifiée dans le code de `stats-api/` avant utilisation.
 
-L’application, l’API et la base de données fonctionnent avec Docker Compose. Il reste à vérifier le fonctionnement complet depuis le navigateur et à sécuriser la configuration en centralisant les secrets dans `.env`, sans exposer le port PostgreSQL inutilement.
+Tester la disponibilité du service :
 
+```powershell
+curl.exe -i http://localhost:8000/
+```
 
-### 22. Validation finale
+Si cette route n'existe pas, utiliser l'endpoint de santé ou de statistiques effectivement défini dans l'application.
 
-Les tests ont été réalisés avec succès :
-- Les quatre conteneurs Docker démarrent correctement.
-- PostgreSQL est `healthy` et son port n’est plus publié sur l’hôte.
-- L’API retourne les scores enregistrés.
-- Le jeu fonctionne dans le navigateur et l’enregistrement des scores est opérationnel.
+## 8. Sécurité et bonnes pratiques Docker
 
-**Bilan :** ClickFast fonctionne avec Docker Compose, une API REST et une base PostgreSQL persistante.
+Le projet applique ou vise les bonnes pratiques suivantes :
 
+- Utiliser des images de base versionnées.
+- Exécuter les processus applicatifs avec un utilisateur non privilégié lorsque cela est pris en charge.
+- Limiter le contenu copié dans les images.
+- Utiliser un fichier `.dockerignore`.
+- Séparer les services sur un réseau Docker dédié.
+- Ne pas publier le port PostgreSQL en production.
+- Conserver les données dans un volume nommé.
+- Externaliser les secrets et la configuration.
+- Utiliser des requêtes SQL paramétrées.
+- Vérifier les erreurs de connexion à la base.
+- Utiliser des contrôles de santé pour ordonner le démarrage des services lorsque la configuration le permet.
 
-## Mesures des images
+### Vérifier les images
 
-| **Image**          | **Taille**                  | **Couches (poids max)** | **Build froid / chaud** | **Temps 1re réponse HTTP** |
-| ------------------ | --------------------------- | ----------------------- | ----------------------- | -------------------------- |
-| clickfast (le jeu) | 20,6 Mo (5,8 Mo compressés)  | 11 (9,1 Mo)             | 32,5 s / 10,3 s         | 5,2 s                      |
-| l'API de scores    | 250 Mo (63,3 Mo compressés) | 8 (167,0 Mo)            | 40,3 s / 10,3 s         | 5,6 s                      |
-| stats-api          | 232 Mo (55,2 Mo compressés) | 9 (87,7 Mo)             | 57,4 s / 9,1 s          | 7,8 s                      |
+```powershell
+docker images
+```
+
+Afficher les couches d'une image :
+
+```powershell
+docker history clickfast:1.3
+docker history clickfast-api:1.0
+docker history clickfast-stats-api:1.0
+```
+
+Afficher le nombre de couches :
+
+```powershell
+docker image inspect clickfast:1.3 --format "{{len .RootFS.Layers}}"
+docker image inspect clickfast-api:1.0 --format "{{len .RootFS.Layers}}"
+docker image inspect clickfast-stats-api:1.0 --format "{{len .RootFS.Layers}}"
+```
+
+## 9. Métriques Docker — État initial mesuré
+
+Les mesures ci-dessous correspondent aux résultats obtenus pendant l'analyse du projet. Elles constituent un état initial et non un bilan après optimisation.
+
+### 9.1. Taille des images et nombre de couches
+
+| Image | Taille disque Docker | Taille du contenu | Couches |
+|---|---:|---:|---:|
+| `clickfast:1.3` | 81,5 MB | 23 MB | 11 |
+| `clickfast-api:1.0` | 253 MB | 63,9 MB | 8 |
+| `clickfast-stats-api:1.0` | 243 MB | 58,7 MB | 8 |
+
+La taille disque Docker et la taille du contenu sont deux mesures distinctes. Les tailles peuvent également varier selon la version de Docker et les images présentes localement.
+
+### 9.2. Couches principales identifiées
+
+| Image | Couche identifiée | Taille annoncée par Docker |
+|---|---|---:|
+| `clickfast:1.3` | Installation Nginx et dépendances | 43,6 MB |
+| `clickfast-api:1.0` | Installation de Node.js | 167 MB |
+| `clickfast-stats-api:1.0` | Installation de Python | 41,4 MB |
+| `clickfast-stats-api:1.0` | Installation des dépendances Python | 50,5 MB |
+
+Ces valeurs proviennent de `docker history`. Elles permettent d'identifier les couches à examiner, mais ne représentent pas nécessairement une taille additionnelle unique sur le disque, car les couches peuvent être partagées.
+
+### 9.3. Temps de construction et réponse HTTP
+
+| Mesure | Résultat | Périmètre |
+|---|---:|---|
+| Construction frontend sans cache | 3,61 s | `docker build --no-cache` |
+| Construction frontend avec cache | 1,1 s | Durée affichée par Docker |
+| Construction frontend avec cache, premier essai | 2,91 s | Durée totale mesurée par PowerShell |
+| Première réponse HTTP mesurée | 95,11 ms | Frontend via tunnel SSH local |
+| Dernière réponse HTTP mesurée | 30,17 ms | Frontend via tunnel SSH local |
+
+Les temps de construction mesurés par PowerShell incluent le temps de lancement et d'exécution de la commande. La durée affichée par Docker mesure le processus de construction selon ses propres indications. Ces valeurs ne sont donc pas strictement équivalentes.
+
+Le dernier test HTTP a renvoyé `200 OK`. Les deux mesures HTTP sont ponctuelles ; plusieurs essais seraient nécessaires pour calculer une moyenne fiable.
+
+### 9.4. Commandes de mesure
+
+Construction avec cache :
+
+```powershell
+Measure-Command {
+    docker build -t clickfast:metrics-test .
+}
+```
+
+Construction sans cache :
+
+```powershell
+Measure-Command {
+    docker build --no-cache -t clickfast:metrics-test .
+}
+```
+
+Mesure du temps de réponse HTTP :
+
+```powershell
+curl.exe -s -o NUL -w "HTTP %{http_code} - %{time_total} secondes`n" http://localhost:8080
+```
+
+La construction sans cache permet de mesurer un scénario où les étapes de construction ne réutilisent pas le cache. Elle ne constitue pas nécessairement une mesure de reconstruction sur une machine entièrement vierge.
+
+### 9.5. Optimisations à évaluer
+
+- Examiner les images de base Node.js et Python et envisager des variantes plus légères compatibles.
+- Vérifier que seules les dépendances de production sont installées.
+- Maintenir un ordre de `COPY` qui préserve le cache des dépendances.
+- Vérifier que `.dockerignore` exclut les fichiers inutiles.
+- Éviter de copier les sources, outils ou fichiers temporaires non nécessaires.
+- Comparer les tailles et les temps de construction après chaque modification.
+- Tester les services et les fonctionnalités après chaque optimisation.
+
+**État :** les mesures initiales sont disponibles. Les mesures des deux API avec et sans cache ainsi que les résultats après optimisation restent à compléter.
+
+## 10. CI/CD et déploiement
+
+Le workflow GitHub Actions se trouve dans :
+
+```text
+.github/workflows/ci.yml
+```
+
+Selon la configuration du projet, le pipeline exécute les étapes suivantes :
+
+1. Lint et tests.
+2. Construction des images Docker.
+3. Publication des images sur Docker Hub.
+4. Déploiement sur la VM lors d'un push vers `main`, via un runner auto-hébergé et SSH.
+
+Les secrets et mots de passe doivent être configurés dans les secrets GitHub ou dans les fichiers d'environnement locaux non versionnés.
+
+Ne jamais committer :
+
+- Un fichier `.env` contenant des secrets.
+- Une clé privée SSH.
+- Des mots de passe de production.
+- Des jetons d'accès.
+
+### Vérifier le déploiement
+
+Vérifier les conteneurs de production :
+
+```powershell
+docker ps
+```
+
+Vérifier le site via le tunnel SSH local :
+
+```powershell
+curl.exe -I http://localhost:8080
+```
+
+Le tunnel doit être actif pour accéder à cette adresse si le site n'est pas directement exposé sur le réseau.
+
+Le déploiement doit utiliser les images publiées et le fichier `docker-compose.prod.yml`, avec les variables nécessaires dans `.env.prod`. Les tags d'images doivent être explicitement définis et cohérents avec ceux publiés sur Docker Hub.
+
+## 11. Sauvegarde et restauration PostgreSQL
+
+Le script `backup-clickfast-db.ps1` réalise une sauvegarde de la base de production avec `pg_dump`, au format custom.
+
+La procédure prévoit :
+
+1. Création du dump.
+2. Restauration du dump dans un conteneur PostgreSQL jetable.
+3. Comparaison du nombre de lignes de chaque table avec la production.
+4. Conservation du dump uniquement si les contrôles réussissent.
+5. Génération d'un manifeste JSON contenant le SHA-256 et le nombre de lignes.
+6. Suppression des sauvegardes de plus de 14 jours, en conservant toujours les trois plus récentes.
+
+Le journal est écrit dans :
+
+```text
+%LOCALAPPDATA%\ClickFast\backup.log
+```
+
+### Créer une sauvegarde vérifiée
+
+```powershell
+.\backup-clickfast-db.ps1
+```
+
+### Vérifier à nouveau une sauvegarde
+
+```powershell
+.\backup-clickfast-db.ps1 -Verify <fichier>
+```
+
+Remplacer `<fichier>` par le chemin attendu par le script.
+
+### Restaurer en production
+
+**Attention : cette opération écrase les données actuelles.** Vérifier le fichier, le nom de la base et les identifiants avant de l'exécuter.
+
+```powershell
+docker cp backups\db\<fichier>.dump vm-prod:/var/tmp/restore.dump
+docker exec vm-prod docker cp /var/tmp/restore.dump clickfast-db:/var/tmp/restore.dump
+docker exec vm-prod docker exec clickfast-db pg_restore -U clickfast -d clickfast --clean --if-exists --exit-on-error /var/tmp/restore.dump
+```
+
+Remplacer `<fichier>` par le nom réel du dump à restaurer.
+
+## 12. Structure principale du dépôt
+
+```text
+Jeux_ClickFast/
+├── index.html
+├── style.css
+├── script.js
+├── api/
+├── stats-api/
+├── Dockerfile
+├── Dockerfile.vm
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── .dockerignore
+├── .env.example
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── backup-clickfast-db.ps1
+├── backups/
+│   └── db/
+└── README.md
+```
+
+Cette arborescence est indicative : vérifier les noms et les chemins réels dans le dépôt avant de la considérer comme exhaustive. Le dossier des sauvegardes de production doit rester non versionné.
+
+## 13. Journal de bord — étapes du projet
+
+Le journal de bord retrace les réalisations, les difficultés, les mesures et les validations. Les éléments marqués « à vérifier » ne doivent être déclarés terminés qu'après exécution des tests correspondants.
+
+| Étape | Travail attendu | État documenté |
+|---|---|---|
+| 1. Jeu fonctionnel | Compteur, chronomètre de 5 secondes, arrêt du compteur en fin de partie | À valider par un test fonctionnel complet |
+| 2. Image frontend | Nginx, utilisateur non privilégié, fichiers nécessaires uniquement | Image mesurée : 81,5 MB, 11 couches |
+| 3. API de scores | Enregistrement et consultation des scores, persistance PostgreSQL | Fonctionnalités documentées ; tests de persistance à confirmer |
+| 4. Réseau Docker | Réseau dédié, accès à la base par nom de service, port DB non publié en production | Configuration à vérifier et tests d'isolation à consigner |
+| 5. Secrets et configuration | Variables d'environnement, `.env.example`, absence de secrets dans Git | Configuration décrite ; contrôle de l'historique Git à confirmer |
+| 6. Docker Compose | Démarrage coordonné, volume persistant, gestion des erreurs et journalisation | Stack exécutée ; tests de panne et de récupération à compléter |
+| 7. API statistiques | Meilleur score, parties, joueurs distincts, gestion des erreurs DB | API présente ; comparaison avec les résultats SQL à compléter |
+| 8. Publication et déploiement | Images publiées, configuration de production autonome, démarrage sans sources | Déploiement documenté ; test dans un répertoire vierge à confirmer |
+| 9. Métriques et optimisation | Mesures des images, couches, builds, réponses HTTP et comparaison après optimisation | Mesures initiales disponibles ; optimisation et mesures finales à effectuer |
+| 10. Tests de bout en bout | Partie complète, score invalide, isolation DB, statistiques SQL, panne DB | À valider par les tests finaux |
+
+### Entrée de journal — mesures initiales
+
+- **Travail effectué :** inspection des trois images Docker, du nombre de couches et des principales couches lourdes.
+- **Résultats :** frontend 81,5 MB ; API de scores 253 MB ; API statistiques 243 MB.
+- **Construction frontend :** 3,61 secondes sans cache ; 1,1 seconde affichée par Docker lors d'une construction avec cache.
+- **Réponse HTTP :** `200 OK`, mesurée à 30,17 ms lors du dernier essai.
+- **Difficulté rencontrée :** les durées affichées par PowerShell et Docker ne mesurent pas exactement le même périmètre.
+- **Suite prévue :** mesurer les deux API, optimiser les images si nécessaire, puis documenter les résultats avant/après.
+
+### Validation finale
+
+Avant de déclarer le projet terminé, vérifier :
+
+- [ ] Le jeu fonctionne jusqu'à la fin du chronomètre.
+- [ ] Les scores restent présents après recréation des conteneurs avec le même volume.
+- [ ] Le top 10 et les statistiques correspondent aux données SQL.
+- [ ] PostgreSQL n'est pas directement accessible depuis l'hôte en production.
+- [ ] Les données invalides sont rejetées correctement.
+- [ ] Les services gèrent proprement une indisponibilité de la base.
+- [ ] Les images sont publiées et le déploiement fonctionne sans code source local.
+- [ ] Les mesures avant/après optimisation sont consignées.
+- [ ] Les sauvegardes sont restaurables et vérifiées.
+- [ ] Le dépôt ne contient aucun secret ni fichier de sauvegarde sensible.
+
+## 14. Objectif du projet
+
+ClickFast permet de mettre en pratique le développement web, la conception d'API, la persistance PostgreSQL, la conteneurisation, la sécurité des services, les mesures de performance, l'intégration continue, le déploiement et les stratégies de sauvegarde.
+
+Le README doit être maintenu au fil des étapes, avec des commandes reproductibles, des mesures vérifiables et un journal de bord fidèle aux tests réellement effectués.
