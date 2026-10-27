@@ -112,3 +112,68 @@ jobs:
           file: ./stats-api/Dockerfile
           push: true
           tags: orokia/clickfast-stats-api:${{ github.sha }}
+  deploy:
+    name: Déployer ClickFast sur la VM
+    runs-on: self-hosted
+    needs: publish
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Déployer sur la VM de production
+        shell: powershell
+        env:
+          VM_SSH_HOST: ${{ secrets.VM_SSH_HOST }}
+          VM_SSH_PORT: ${{ secrets.VM_SSH_PORT }}
+          VM_SSH_PRIVATE_KEY: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          VM_SSH_KNOWN_HOSTS: ${{ secrets.VM_SSH_KNOWN_HOSTS }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if ([string]::IsNullOrWhiteSpace($env:VM_SSH_PRIVATE_KEY)) {
+            throw "Le secret VM_SSH_PRIVATE_KEY est absent."
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:VM_SSH_KNOWN_HOSTS)) {
+            throw "Le secret VM_SSH_KNOWN_HOSTS est absent."
+          }
+
+          $keyPath = Join-Path $env:RUNNER_TEMP "deploy_key"
+          $knownHostsPath = Join-Path $env:RUNNER_TEMP "known_hosts"
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+          try {
+            [System.IO.File]::WriteAllText(
+              $keyPath,
+              $env:VM_SSH_PRIVATE_KEY.Trim() + "`n",
+              $utf8NoBom
+            )
+
+            [System.IO.File]::WriteAllText(
+              $knownHostsPath,
+              $env:VM_SSH_KNOWN_HOSTS.Trim() + "`n",
+              $utf8NoBom
+            )
+
+            icacls $keyPath /inheritance:r /grant:r "$($env:USERNAME):(R)" | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+              throw "Impossible de sécuriser les permissions de la clé SSH."
+            }
+
+            $remoteCommand = "IMAGE_TAG=$($env:IMAGE_TAG) docker compose --env-file /root/.env.prod -f /root/docker-compose.prod.yml up -d game api stats-api"
+
+            ssh -i $keyPath `
+              -p $env:VM_SSH_PORT `
+              -o IdentitiesOnly=yes `
+              -o StrictHostKeyChecking=yes `
+              -o "UserKnownHostsFile=$knownHostsPath" `
+              root@$env:VM_SSH_HOST `
+              $remoteCommand
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Le déploiement SSH a échoué."
+            }
+          }
+          finally {
+            Remove-Item $keyPath, $knownHostsPath -Force -ErrorAction SilentlyContinue
+          }
